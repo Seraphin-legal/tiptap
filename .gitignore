@@ -35,3 +35,6 @@ demos/*.tgz
 # demo directories
 demos/src/Dev/**
 !demos/src/Dev/.gitkeep
+
+VSWorkspaceState.json
+.wsuo

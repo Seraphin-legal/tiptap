@@ -50,6 +50,8 @@ export class Editor extends EventEmitter<EditorEvents> {
 
   public extensionStorage: Record<string, any> = {}
 
+  private _onDispatchTransaction!: any;
+
   public options: EditorOptions = {
     element: document.createElement('div'),
     content: '',
@@ -71,6 +73,8 @@ export class Editor extends EventEmitter<EditorEvents> {
     onFocus: () => null,
     onBlur: () => null,
     onDestroy: () => null,
+    onDispatchTransaction: (transaction: Transaction, state: EditorState): Transaction =>
+      transaction,
   }
 
   constructor(options: Partial<EditorOptions> = {}) {
@@ -90,6 +94,7 @@ export class Editor extends EventEmitter<EditorEvents> {
     this.on('focus', this.options.onFocus)
     this.on('blur', this.options.onBlur)
     this.on('destroy', this.options.onDestroy)
+    this._onDispatchTransaction = this.options.onDispatchTransaction
 
     window.setTimeout(() => {
       if (this.isDestroyed) {
@@ -338,7 +343,10 @@ export class Editor extends EventEmitter<EditorEvents> {
       return
     }
 
-    const state = this.state.apply(transaction)
+    const modifiedTransaction = this.isEditable
+      ? this._onDispatchTransaction(transaction, this.state)
+      : transaction
+    const state = this.state.apply(modifiedTransaction)
     const selectionHasChanged = !this.state.selection.eq(state.selection)
 
     this.view.updateState(state)

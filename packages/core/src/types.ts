@@ -70,6 +70,7 @@ export interface EditorOptions {
   onFocus: (props: EditorEvents['focus']) => void
   onBlur: (props: EditorEvents['blur']) => void
   onDestroy: (props: EditorEvents['destroy']) => void
+  onDispatchTransaction: (transaction: Transaction, state: EditorState) => Transaction
 }
 
 export type HTMLContent = string
