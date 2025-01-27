@@ -142,6 +142,7 @@ export interface EditorOptions {
   onDestroy: (props: EditorEvents['destroy']) => void;
   onPaste: (e: ClipboardEvent, slice: Slice) => void;
   onDrop: (e: DragEvent, slice: Slice, moved: boolean) => void;
+  onDispatchTransaction?: (transaction: Transaction, state: EditorState) => Transaction;
 }
 
 export type HTMLContent = string;

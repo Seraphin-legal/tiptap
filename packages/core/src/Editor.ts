@@ -53,6 +53,8 @@ export class Editor extends EventEmitter<EditorEvents> {
 
   private css!: HTMLStyleElement
 
+  private _onDispatchTransaction?: (transaction: Transaction, state: EditorState) => Transaction;
+
   public schema!: Schema
 
   public view!: EditorView
@@ -114,6 +116,7 @@ export class Editor extends EventEmitter<EditorEvents> {
     this.on('destroy', this.options.onDestroy)
     this.on('drop', ({ event, slice, moved }) => this.options.onDrop(event, slice, moved))
     this.on('paste', ({ event, slice }) => this.options.onPaste(event, slice))
+    this._onDispatchTransaction = this.options.onDispatchTransaction;
 
     window.setTimeout(() => {
       if (this.isDestroyed) {
@@ -452,35 +455,38 @@ export class Editor extends EventEmitter<EditorEvents> {
       return
     }
 
-    const state = this.state.apply(transaction)
+    const modified = this.isEditable && this._onDispatchTransaction !== undefined
+      ? this._onDispatchTransaction(transaction, this.state)
+      : transaction
+    const state = this.state.apply(modified)
     const selectionHasChanged = !this.state.selection.eq(state.selection)
 
     this.emit('beforeTransaction', {
       editor: this,
-      transaction,
+      transaction: modified,
       nextState: state,
     })
     this.view.updateState(state)
     this.emit('transaction', {
       editor: this,
-      transaction,
+      transaction: modified,
     })
 
     if (selectionHasChanged) {
       this.emit('selectionUpdate', {
         editor: this,
-        transaction,
+        transaction: modified,
       })
     }
 
-    const focus = transaction.getMeta('focus')
-    const blur = transaction.getMeta('blur')
+    const focus = modified.getMeta('focus')
+    const blur = modified.getMeta('blur')
 
     if (focus) {
       this.emit('focus', {
         editor: this,
         event: focus.event,
-        transaction,
+        transaction: modified,
       })
     }
 
@@ -488,17 +494,17 @@ export class Editor extends EventEmitter<EditorEvents> {
       this.emit('blur', {
         editor: this,
         event: blur.event,
-        transaction,
+        transaction: modified,
       })
     }
 
-    if (!transaction.docChanged || transaction.getMeta('preventUpdate')) {
+    if (!modified.docChanged || modified.getMeta('preventUpdate')) {
       return
     }
 
     this.emit('update', {
       editor: this,
-      transaction,
+      transaction: modified,
     })
   }
 
